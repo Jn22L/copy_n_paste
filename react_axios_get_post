@@ -1,0 +1,17 @@
+// Axios + GET
+componentDidMount() {
+    // Simple GET request using axios
+    axios.get('https://api.npms.io/v2/search?q=react')
+        .then(response => this.setState({ totalReactPackages: response.data.total }));
+}
+
+// Axios + POST
+componentDidMount() {
+    // Simple POST request with a JSON body using axios
+    const article = { title: 'React POST Request Example' };
+    axios.post('https://reqres.in/api/articles', article)
+        .then(response => this.setState({ articleId: response.data.id }));
+}
+
+* 참조
+https://jasonwatmore.com/post/2020/07/17/react-axios-http-post-request-examples
