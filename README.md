@@ -3,4 +3,4 @@
 
 |제목|내용|
 |------|-----|
-|테스트1|테스트2|
+|Arrow Function Test|<https://github.com/Jn22L/copy_n_paste/blob/main/es6_arrow_function_test>|
