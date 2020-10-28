@@ -1,0 +1,2 @@
+<span style="color:red">console log 색깔넣기</span>
+console.log('%c Oh my heavens! ', 'background: black; color: yellow');  
