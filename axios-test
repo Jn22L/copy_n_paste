@@ -5,15 +5,21 @@ function App() {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
-    axios.get(`https://jsonplaceholder.typicode.com/posts`).then((res) => {
-      setItems(res.data);
-    });
+    axios
+      .get(`https://jsonplaceholder.typicode.com/comments`, {
+        params: {
+          postId: "3",
+        },
+      })
+      .then((res) => {
+        setItems(res.data);
+      });
   }, []);
 
   return (
     <div>
       {items.map((v, i) => {
-        return <li key={i}>{v.title}</li>;
+        return <li key={i}>{v.name}</li>;
       })}
     </div>
   );
