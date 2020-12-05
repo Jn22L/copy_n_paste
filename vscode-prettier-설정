@@ -12,5 +12,6 @@
     },
     "window.zoomLevel": 0,
     "prettier.tabWidth": 2,
-    "prettier.endOfLine": "auto"
+    "prettier.endOfLine": "auto",
+    "prettier.printWidth": 200,    
 }
