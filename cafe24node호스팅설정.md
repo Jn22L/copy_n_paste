@@ -1,6 +1,6 @@
 ---
 title: "카페24 Node 호스팅 Git 커밋하기"
-date: 2022-01-17 17:06:00 -0600
+date: 2022-01-17 17:50
 categories: cafe24 호스팅 설정
 tags: git
 ---
