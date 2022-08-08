@@ -1,6 +1,6 @@
 public ModelAndView uploadTest0808( HttpServletRequest request, HttpServletResponse response) throws Exception{
         HttpSession session = request.getSession();
-        session.setAttribute("USER_ID","22220252");
+        session.setAttribute("USER_ID","12345678");
         session.setAttribute("NAME","테스트");
 
         String name1     = request.getParameter("WRITENAME");
@@ -10,7 +10,7 @@ public ModelAndView uploadTest0808( HttpServletRequest request, HttpServletRespo
         while(fileNames.hasNext()) {
             MultipartFile mFile = multiRequest.getFile(fileNames.next());
             if (mFile != null && !mFile.isEmpty()) {
-                String uploadPath     = "D:\\DATA\\RRKEL\\upload\\test0808\\";
+                String uploadPath     = "D:\\DATA\\upload\\test0808\\";
                 File folder = new File(uploadPath);
                 if (!folder.exists()) {
                     try {
