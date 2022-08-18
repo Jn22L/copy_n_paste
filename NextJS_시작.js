@@ -1,4 +1,4 @@
-// _app.js
+// pages > _app.js
 import NavBar from "../components/NavBar";
 import "../styles/globals.css";
 
@@ -13,7 +13,7 @@ export default function App({ Component, pageProps }) {
   );
 }
 
-// NavBar.js
+// components > NavBar.js
 import Link from "next/link";
 import { useRouter } from "next/router";
 export default function NavBar() {
@@ -38,12 +38,12 @@ export default function NavBar() {
   );
 }
 
-// index.js
+// pages > index.js
 export default function Home() {
   return <>index</>;
 }
 
-// about.js
+// pages > about.js
 export default function About() {
   return <>about</>;
 }
