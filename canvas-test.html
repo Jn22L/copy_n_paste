@@ -1,0 +1,68 @@
+<div id="stage">
+  <canvas id="ui-layer" width="480" height="320"></canvas>
+  <canvas id="game-layer" width="480" height="320"></canvas>
+  <canvas id="background-layer" width="480" height="320"></canvas>
+</div>
+
+<style>
+  #stage {
+    width: 480px;
+    height: 320px;
+    position: relative;
+    border: 2px solid black;
+  }
+
+  canvas {
+    position: absolute;
+  }
+  #ui-layer {
+    z-index: 3;
+  }
+  #game-layer {
+    z-index: 2;
+  }
+  #background-layer {
+    z-index: 1;
+  }
+</style>
+<script>
+  var close_it = false;
+
+  uiLayer = document.getElementById("ui-layer");
+  gameLayer = document.getElementById("game-layer");
+  backgroundLayer = document.getElementById("background-layer");
+  ctx3 = uiLayer.getContext("2d");
+  ctx2 = gameLayer.getContext("2d");
+  ctx1 = backgroundLayer.getContext("2d");
+
+  ctx1.lineWidth = 3; // thin lines with same options
+  ctx2.lineWidth = 3; // thin lines with same options
+  ctx3.lineWidth = 3; // thin lines with same options
+
+  ctx1.beginPath();
+  ctx1.lineJoin = "miter";
+  ctx1.strokeStyle = "blue";
+  ctx1.moveTo(20, 200);
+  ctx1.lineTo(70, 250);
+  ctx1.lineTo(70, 190);
+  if (close_it) ctx1.closePath();
+  ctx1.stroke();
+
+  ctx2.beginPath();
+  ctx2.lineJoin = "bevel";
+  ctx2.strokeStyle = "red";
+  ctx2.moveTo(20, 200);
+  ctx2.lineTo(170, 250);
+  ctx2.lineTo(170, 190);
+  if (close_it) ctx2.closePath();
+  ctx2.stroke();
+
+  ctx3.beginPath();
+  ctx3.lineJoin = "round";
+  ctx3.strokeStyle = "yellow";
+  ctx3.moveTo(20, 200);
+  ctx3.lineTo(260, 250);
+  ctx3.lineTo(260, 190);
+  if (close_it) ctx3.closePath();
+  ctx3.stroke();
+</script>
