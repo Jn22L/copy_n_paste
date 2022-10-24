@@ -10,29 +10,17 @@
           font-family: "Roboto","Noto Sans KR",나눔고딕,"Nanum Gothic","Malgun Gothic",맑은고딕,굴림,돋움,"Dotum","sans-serif";
           font-size: 12px;
         }
-        div.hjboard-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          height: 40px;   
-          border-top: 1px solid #c2c2c2;
-          border-bottom: 1px solid #f2f2f2;
-          color: #999;
-        }
+
         div.hjboard-header-seq {
-          flex-basis: 10%;
           text-align: center;          
         }        
         div.hjboard-header-title {
-          flex-basis: 60%;
           text-align: center;          
         }
         div.hjboard-header-userid {
-          flex-basis: 15%;
           text-align: center;    
         }     
         div.hjboard-header-createdt {
-          flex-basis: 15%;
           text-align: center;    
         } 
 
@@ -46,21 +34,31 @@
           display: flex;
           justify-content: space-between;   
           align-items: center;
+        }
+
+        li.hjboard-header{
+          height: 30px;         
+          border-top: 1px solid #c2c2c2;
+          border-bottom: 1px solid #c2c2c2;
+        }  
+
+        li.hjboard-row{
           height: 28px;         
           border-bottom: 1px solid #f2f2f2;;
-        }
-        div.hjboard-row-seq {
+        }        
+
+        div.hjboard-row-seq, div.hjboard-header-seq {
           flex-basis: 10%;
           text-align: center;    
         }        
-        div.hjboard-row-title {
+        div.hjboard-row-title, div.hjboard-header-title {
           flex-basis: 60%;
         }
-        div.hjboard-row-userid {
+        div.hjboard-row-userid, div.hjboard-header-userid {
           flex-basis: 15%;
           text-align: center;
         }     
-        div.hjboard-row-createdt {
+        div.hjboard-row-createdt, div.hjboard-header-createdt {
           flex-basis: 15%;
           text-align: center;
         }                  
@@ -81,15 +79,40 @@
             );
             let resData = await res.json();
             console.log(resData);
+            
             const root = document.querySelector("#root");
-            const divHeader = document.createElement("div");
-            divHeader.setAttribute("class", "hjboard-header");
-            divHeader.innerHTML = `<div class="hjboard-header-seq">번호</div><div class="hjboard-header-title">제목</div><div class="hjboard-header-userid">글쓴이</div><div class="hjboard-header-createdt">날짜</div>`
-            root.appendChild(divHeader);
             const ulTable = document.createElement("ul");
 
+            // make header
+            const liHeader = document.createElement("li");
+            liHeader.setAttribute("class", "hjboard-header");    
+
+            const divHeaderSeq = document.createElement("div");  
+            const divHeaderTitle = document.createElement("div");  
+            const divHeaderUserId = document.createElement("div");
+            const divHeaderCreateDt = document.createElement("div");  
+
+            divHeaderSeq.setAttribute("class", "hjboard-header-seq");              
+            divHeaderTitle.setAttribute("class", "hjboard-header-title");
+            divHeaderUserId.setAttribute("class", "hjboard-header-userid");  
+            divHeaderCreateDt.setAttribute("class", "hjboard-header-createdt");    
+            
+            divHeaderSeq.innerHTML = "번호";
+            divHeaderTitle.innerHTML = "제목";
+            divHeaderUserId.innerHTML = "글쓴이";
+            divHeaderCreateDt.innerHTML = "날짜";
+
+            liHeader.appendChild(divHeaderSeq);
+            liHeader.appendChild(divHeaderTitle);
+            liHeader.appendChild(divHeaderUserId);
+            liHeader.appendChild(divHeaderCreateDt);
+
+            ulTable.appendChild(liHeader);
+
+            // make rows
             resData.forEach(function(element){
-              const liRow = document.createElement("li");  
+              const liRow = document.createElement("li"); 
+              liRow.setAttribute("class", "hjboard-row"); 
 
               const divSeq = document.createElement("div");  
               const divTitle = document.createElement("div");  
