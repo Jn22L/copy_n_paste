@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+        html, body {
+          font-family: "Roboto","Noto Sans KR",나눔고딕,"Nanum Gothic","Malgun Gothic",맑은고딕,굴림,돋움,"Dotum","sans-serif";
+          font-size: 12px;
+        }
+        div.hjboard-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          height: 40px;   
+          border-top: 1px solid #c2c2c2;
+          border-bottom: 1px solid #f2f2f2;
+          color: #999;
+        }        
+        ul {
+          list-style-type: none; /* Remove bullets */
+          padding: 0; /* Remove padding */
+          margin: 0; /* Remove margins */
+          
+        }
+        li{
+          display: flex;
+          justify-content: space-between;   
+          align-items: center;
+          height: 28px;         
+          border-bottom: 1px solid #f2f2f2;;
+        }
+        div.hjboard-row-seq, div.hjboard-header-seq {
+          width: 50px;
+        }        
+        div.hjboard-row-title, div.hjboard-header-title {
+          width: 500px;
+        }
+        div.hjboard-row-userid, div.hjboard-header-userid {
+          width: 100px;
+        }     
+        div.hjboard-row-createdt, div.hjboard-header-createdt {
+          width: 100px;
+        }                  
+
+
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+        function init() {
+          // select
+          async function selectBoard(SEQ) {
+            let res = await fetch(
+              `http://localhost:8080/select?` +
+                new URLSearchParams({
+                  SEQ,
+                })
+            );
+            let resData = await res.json();
+            console.log(resData);
+            const root = document.querySelector("#root");
+            const divHeader = document.createElement("div");
+            divHeader.setAttribute("class", "hjboard-header");
+            divHeader.innerHTML = `<div class="hjboard-header-seq">번호</div><div class="hjboard-header-title">제목</div><div class="hjboard-header-userid">글쓴이</div><div class="hjboard-header-createdt">날짜</div>`
+            root.appendChild(divHeader);
+            const ulTable = document.createElement("ul");
+
+            resData.forEach(function(element){
+              const liRow = document.createElement("li");  
+
+              const divSeq = document.createElement("div");  
+              const divTitle = document.createElement("div");  
+              const divUserId = document.createElement("div");
+              const divCreateDt = document.createElement("div");  
+
+              divSeq.setAttribute("class", "hjboard-row-seq");              
+              divTitle.setAttribute("class", "hjboard-row-title");
+              divUserId.setAttribute("class", "hjboard-row-userid");  
+              divCreateDt.setAttribute("class", "hjboard-row-createdt");
+
+              divSeq.innerHTML = element.SEQ;
+              divTitle.innerHTML = element.TITLE;
+              divUserId.innerHTML = element.USER_ID;  
+              divCreateDt.innerHTML = element.CREATE_DT;   
+
+              liRow.appendChild(divSeq);
+              liRow.appendChild(divTitle);
+              liRow.appendChild(divUserId);
+              liRow.appendChild(divCreateDt);
+
+              ulTable.appendChild(liRow);
+            })
+
+            root.appendChild(ulTable);
+            
+
+        //  selectBoard(1);
+        }
+        selectBoard(1);
+    }
+     init();
+  </script>
+  </body>
+</html>
