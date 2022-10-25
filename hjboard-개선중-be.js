@@ -1,15 +1,49 @@
-// be
+const express = require("express");
+const mysql = require("mysql");
+const mybatisMapper = require("mybatis-mapper");
 
-app.get("/select", (req, res) => {
+const rootDir = __dirname.replace("services", ""); // root 폴더위치 ( /services -> / )
+const dbconfig = require(`${rootDir}/config/dbconfig.js`);
+
+mybatisMapper.createMapper([`${rootDir}/board.xml`]);
+
+const app = express();
+const port = 8080;
+
+app.use(express.json()); // json body 받기설정
+
+var connection;
+
+function handleDisconnect() {
+  connection = mysql.createConnection(dbconfig);
+  connection.connect(function (err) {
+    if (err) {
+      //console.log("error when connecting to db:", err);
+      setTimeout(handleDisconnect, 2000);
+    }
+  });
+  connection.on("error", function (err) {
+    if (err.code === "PROTOCOL_CONNECTION_LOST") {
+      handleDisconnect();
+    } else {
+      throw err;
+    }
+  });
+}
+
+handleDisconnect();
+
+app.get("/selectBoard", (req, res) => {
   //const curDateTime = moment(new Date()).format("YYYYMMDDHHmm");
 
-  console.log(req.query);
+  // console.log(req.query);
   var param = {
     SEQ: req.query.SEQ,
   };
 
   var format = { language: "sql", indent: "  " };
   var query = mybatisMapper.getStatement("hjboard", "selectBoard", param, format);
+  //  console.log(query);
 
   connection.query(query, (error, rows) => {
     if (error) throw error;
@@ -17,18 +51,66 @@ app.get("/select", (req, res) => {
   });
 });
 
+/**
+ * 입력/수정/삭제(N건)
+ * @param
+ * @return
+ */
+app.post("/save-list", function (req, res) {
+  console.log("param:", req.body.modifiedRows);
+  /*  
+    modifiedRows: {
+        createdRows: [ ...  ],
+        updatedRows: [ ...  ],
+        deletedRows: [ ...  ]
+    }
+  */
+  let sqlErrMsg = [];
 
-// xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="hjboard">  
+  // 삭제
+  req.body.modifiedRows.deletedRows.forEach(function (row) {
+    let SEQ = row.SEQ;
+    let sql = `DELETE FROM HJ_BOARD WHERE SEQ = ${SEQ}`;
+    connection.query(sql, function (err, result) {
+      if (err) {
+        sqlErrMsg.push({ sqlMessage: err.sqlMessage, sql: err.sql });
+      }
+    });
+  });
 
-<!-- 투표건수 -->
-<select id="selectBoard">
-  SELECT SEQ, TITLE, CONTENT, USER_ID, DATE_FORMAT(CREATE_DT,'%Y-%m-%d %H:%i') AS CREATE_DT
-    FROM HJ_BOARD 
-   WHERE 1=1   
-   ORDER BY SEQ DESC
-</select>
+  // 입력
+  req.body.modifiedRows.createdRows.forEach(function (row) {
+    let TITLE = row.TITLE;
+    let CONTENT = row.CONTENT;
+    let sql = `INSERT INTO HJ_BOARD(TITLE, CONTENT) VALUES('${TITLE}', '${CONTENT}')`;
+    connection.query(sql, function (err, result) {
+      if (err) {
+        sqlErrMsg.push({ sqlMessage: err.sqlMessage, sql: err.sql });
+      }
+    });
+  });
 
-</mapper>
+  // 수정
+  req.body.modifiedRows.updatedRows.forEach(function (row) {
+    let SEQ = row.SEQ;
+    let TITLE = row.TITLE;
+    let CONTENT = row.CONTENT;
+    let sql = `UPDATE HJ_BOARD SET TITLE = '${TITLE}', CONTENT = '${CONTENT}' WHERE SEQ = ${SEQ}`;
+    connection.query(sql, function (err, result) {
+      if (err) {
+        sqlErrMsg.push({ sqlMessage: err.sqlMessage, sql: err.sql });
+      }
+    });
+  });
+
+  // 모든 DML 처리후, 결과리턴을 위한 dummy select ... 더 좋은 방법은 ?
+  connection.query(`SELECT 1`, (error, rows) => {
+    res.json(JSON.stringify({ resMsg: sqlErrMsg.length === 0 ? "저장성공" : "에러발생", sqlErrMsg }));
+  });
+});
+
+app.use(express.static(__dirname + "/public")); // 라우터 밑에 위치해야 좀더 빠르다곤 하는데 ? 모르겠음.
+
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
+});
