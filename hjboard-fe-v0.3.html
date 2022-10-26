@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      html,
+      body {
+        font-family: "Roboto", "Noto Sans KR", 나눔고딕, "Nanum Gothic", "Malgun Gothic", 맑은고딕, 굴림, 돋움, "Dotum", "sans-serif";
+        font-size: 12px;
+      }
+      ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      li.hjboard-header {
+        height: 30px;
+        color: #c2c2c2;
+        border-top: 1px solid #c2c2c2;
+        border-bottom: 1px solid #c2c2c2;
+      }
+
+      li.hjboard-row {
+        height: 28px;
+        border-bottom: 1px solid #f2f2f2;
+      }
+
+      li.hjboard-row.current {
+        height: 28px;
+        border-bottom: 1px solid #f2f2f2;
+        background-color: #c2c2c2;
+      }
+
+      li.hjboard-view-row {
+        height: 28px;
+        border-bottom: 1px solid #f2f2f2;
+      }
+      li.hjboard-view-row-content {
+        height: 30vh;
+        border-bottom: 1px solid #f2f2f2;
+      }
+
+      /* view */
+      div.hjboard-view-value-title {
+        flex-basis: 100%;
+      }
+      div.hjboard-view-value-content {
+        flex-basis: 100%;
+        align-self: flex-start;
+      }
+
+      /* list header */
+      div.hjboard-header-seq {
+        flex-basis: 4%;
+        text-align: center;
+      }
+      div.hjboard-header-title {
+        flex-basis: 60%;
+        text-align: center;
+      }
+      div.hjboard-header-user-id {
+        flex-basis: 18%;
+        text-align: center;
+      }
+      div.hjboard-header-create-dt {
+        flex-basis: 18%;
+        text-align: center;
+      }
+
+      /* list row */
+      div.hjboard-row-seq {
+        flex-basis: 4%;
+        text-align: center;
+      }
+      div.hjboard-row-title {
+        flex-basis: 60%;
+        cursor: pointer;
+      }
+      div.hjboard-row-user-id {
+        flex-basis: 18%;
+        text-align: center;
+      }
+      div.hjboard-row-create-dt {
+        flex-basis: 18%;
+        text-align: center;
+      }
+
+      /* list button */
+      div.hjboard-list-buttons {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      div.hjboard-view-buttons {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      div.hjboard-div-like-textarea {
+        -moz-appearance: textfield-multiline; /* Firefox */
+        -webkit-appearance: textarea; /* Safari and Chrome */
+        border: 1px solid #c2c2c2;
+        height: 100%;
+        /*overflow: auto;*/
+        /* padding: 2px; */
+        /*resize: both;*/
+        width: 100%;
+      }
+      div.hjboard-div-like-input {
+        -moz-appearance: textfield; /* Firefox */
+        -webkit-appearance: textfield; /* Safari and Chrome */
+        /* background-color: white; */
+        /* background-color: -moz-field;*/
+        border: 1px solid #c2c2c2;
+        /*box-shadow: 1px 1px 1px 0 lightgray inset;*/
+        margin-top: 5px;
+        padding: 2px 3px;
+        width: 100%;
+      }
+      [contenteditable="true"]:empty:before {
+        content: attr(placeholder);
+        display: block; /* For Firefox */
+        color: #c2c2c2;
+      }
+      /*
+      div[contenteditable="true"] {
+        border: 1px solid #ddd;
+        color: #333;
+        font-size: 14px;
+        width: 300px;
+        padding: 1px;
+      }
+      */
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      function HJBoard() {
+        // create 1 column
+        function createDivCol(strColumnLabel, strClassName) {
+          const div = document.createElement("div");
+          div.textContent = strColumnLabel;
+          div.setAttribute("class", strClassName);
+          return div;
+        }
+
+        /**
+         * select board list
+         * @param
+         * @return
+         */
+        async function selectBoardList(SEQ) {
+          let res = await fetch(
+            `http://localhost:8080/selectBoard?` +
+              new URLSearchParams({
+                SEQ,
+              })
+          );
+          let resData = await res.json();
+
+          const root = document.querySelector("#root");
+          const divBoardList = document.createElement("div");
+          divBoardList.setAttribute("class", "hjboard-list");
+
+          const ulTable = document.createElement("ul");
+
+          /*-- create header --*/
+
+          const headerCols = [
+            { label: "번호", class: "hjboard-header-seq" },
+            { label: "제목", class: "hjboard-header-title" },
+            { label: "이름", class: "hjboard-header-user-id" },
+            { label: "날짜", class: "hjboard-header-create-dt" },
+          ];
+
+          const liHeader = document.createElement("li");
+          liHeader.setAttribute("class", "hjboard-header");
+
+          headerCols.forEach(function (col) {
+            liHeader.appendChild(createDivCol(col.label, col.class));
+          });
+
+          ulTable.appendChild(liHeader);
+
+          /*-- create data rows --*/
+
+          // const dataCols = [
+          //   { col: "SEQ", val: "", class: "hjboard-row-seq" },
+          //   { col: "TITLE", val: "", class: "hjboard-row-title" },
+          //   { col: "USER_ID", val: "", class: "hjboard-row-user-id" },
+          //   { col: "CREATE_DT", val: "", class: "hjboard-row-create-dt" },
+          // ];
+
+          resData.forEach(function (element) {
+            const liRow = document.createElement("li");
+            liRow.setAttribute("class", "hjboard-row");
+            liRow.setAttribute("key", element.SEQ);
+
+            let divSeq = createDivCol(element.SEQ, "hjboard-row-seq");
+            let divTitle = createDivCol(element.TITLE, "hjboard-row-title");
+            let divUserId = createDivCol(element.USER_ID, "hjboard-row-user-id");
+            let divCreateDt = createDivCol(element.CREATE_DT, "hjboard-row-create-dt");
+
+            liRow.appendChild(divSeq);
+            liRow.appendChild(divTitle);
+            liRow.appendChild(divUserId);
+            liRow.appendChild(divCreateDt);
+
+            // dataCols[]
+
+            // const liHeader = document.createElement("li");
+            // liHeader.setAttribute("class", "hjboard-header");
+
+            // headerCols.forEach(function (col) {
+            //   liHeader.appendChild(createDivCol(col.label, col.class));
+            // });
+
+            /*-- title click event --*/
+
+            divTitle.addEventListener("click", function (e) {
+              /*----- highlight current row: Start -----*/
+              let liSelectRow = e.target.parentElement;
+              let liSelectTable = e.target.parentElement.parentElement;
+
+              // 1. reset current
+              liSelectTable.querySelectorAll("li.hjboard-row").forEach(function (row) {
+                row.setAttribute("class", "hjboard-row");
+                row.querySelector(".hjboard-row-seq").textContent = row.getAttribute("key"); // set key
+              });
+
+              // 2. highlight current row
+              liSelectRow.setAttribute("class", "hjboard-row current");
+              liSelectRow.querySelector(".hjboard-row-seq").textContent = ">";
+              /*----- highlight current row: End -----*/
+
+              // 3. create view
+              selectBoardView(liSelectRow.getAttribute("key"));
+
+              // 4. remove button
+              if (root.querySelector(".hjboard-list-buttons")) {
+                root.querySelector(".hjboard-list").removeChild(root.querySelector(".hjboard-list-buttons"));
+              }
+            });
+
+            ulTable.appendChild(liRow);
+          });
+
+          /*-- control buttons --*/
+
+          const divListButtons = document.createElement("div");
+          divListButtons.setAttribute("class", "hjboard-list-buttons");
+
+          const btnGoWrite = document.createElement("button");
+          btnGoWrite.textContent = "글쓰기";
+          divListButtons.appendChild(btnGoWrite);
+
+          btnGoWrite.addEventListener("click", function (e) {
+            if (root.querySelector(".hjboard-view")) {
+              root.removeChild(root.querySelector(".hjboard-view"));
+            }
+            if (root.querySelector(".hjboard-list")) {
+              root.removeChild(root.querySelector(".hjboard-list"));
+            }
+            createWriteForm("", "INSERT");
+          });
+
+          /*-- append root --*/
+
+          divBoardList.appendChild(ulTable);
+          divBoardList.appendChild(divListButtons);
+          root.appendChild(divBoardList);
+        }
+
+        /**
+         * select & view 1 article
+         * @param
+         * @return
+         */
+        async function selectBoardView(SEQ) {
+          let res = await fetch(
+            `http://localhost:8080/selectBoard?` +
+              new URLSearchParams({
+                SEQ,
+              })
+          );
+          let resData = await res.json();
+
+          const root = document.querySelector("#root");
+          const divBoardView = document.createElement("div");
+          divBoardView.setAttribute("class", "hjboard-view");
+          const ulTable = document.createElement("ul");
+
+          // make view row 1
+          let liViewRow1 = document.createElement("li");
+          liViewRow1.setAttribute("class", "hjboard-view-row");
+
+          // 순번
+          const divViewValueSeq = document.createElement("div");
+          divViewValueSeq.textContent = SEQ;
+          divViewValueSeq.setAttribute("style", "display:none;");
+          liViewRow1.appendChild(divViewValueSeq);
+
+          // 제목
+          const divTitleValue = document.createElement("div");
+          divTitleValue.textContent = resData[0].TITLE;
+          divTitleValue.setAttribute("class", "hjboard-view-value-title");
+          liViewRow1.appendChild(divTitleValue);
+
+          // make view row 2
+          let liViewRow2 = document.createElement("li");
+          liViewRow2.setAttribute("class", "hjboard-view-row");
+
+          // 이름
+          const divViewValueUserId = document.createElement("div");
+          divViewValueUserId.textContent = resData[0].USER_ID;
+          divViewValueUserId.setAttribute("class", "hjboard-view-value-user-id");
+          liViewRow2.appendChild(divViewValueUserId);
+
+          // 날짜
+          const divViewValueCreateDt = document.createElement("div");
+          divViewValueCreateDt.textContent = resData[0].CREATE_DT;
+          divViewValueCreateDt.setAttribute("class", "hjboard-view-value-create-dt");
+          liViewRow2.appendChild(divViewValueCreateDt);
+
+          // make view row 3
+          let liViewRowContent = document.createElement("li");
+          liViewRowContent.setAttribute("class", "hjboard-view-row-content");
+
+          // 내용
+          const divViewValueContent = document.createElement("div");
+          divViewValueContent.textContent = resData[0].CONTENT;
+          divViewValueContent.setAttribute("class", "hjboard-view-value-content");
+          liViewRowContent.appendChild(divViewValueContent);
+
+          // 버튼
+          const divButtons = document.createElement("div");
+          divButtons.setAttribute("class", "hjboard-view-buttons");
+
+          const btnGoList = document.createElement("button");
+          btnGoList.textContent = "목록으로";
+          divButtons.appendChild(btnGoList);
+
+          btnGoList.addEventListener("click", function (e) {
+            if (root.querySelector(".hjboard-view")) {
+              root.removeChild(root.querySelector(".hjboard-view"));
+            }
+            if (root.querySelector(".hjboard-list")) {
+              root.removeChild(root.querySelector(".hjboard-list"));
+            }
+            selectBoardList("");
+          });
+
+          const btnUpdate = document.createElement("button");
+          btnUpdate.textContent = "수정";
+          divButtons.appendChild(btnUpdate);
+
+          btnUpdate.addEventListener("click", function (e) {
+            if (root.querySelector(".hjboard-view")) {
+              root.removeChild(root.querySelector(".hjboard-view"));
+            }
+            if (root.querySelector(".hjboard-list")) {
+              root.removeChild(root.querySelector(".hjboard-list"));
+            }
+            createWriteForm(resData[0].SEQ, "UPDATE");
+          });
+
+          const btnDelete = document.createElement("button");
+          btnDelete.textContent = "삭제";
+          divButtons.appendChild(btnDelete);
+
+          btnDelete.addEventListener("click", function (e) {
+            console.log("순번", divViewValueSeq.textContent);
+            let pModRows = [{ SEQ: divViewValueSeq.textContent, USER_ID: "LOGINID" }]; // 로그인 id 연동필요 ???
+            saveBoard(pModRows, "DELETE");
+          });
+
+          ulTable.appendChild(liViewRow1);
+          ulTable.appendChild(liViewRow2);
+          ulTable.appendChild(liViewRowContent);
+          ulTable.appendChild(divButtons);
+
+          divBoardView.appendChild(ulTable);
+
+          if (root.querySelector(".hjboard-view")) {
+            root.removeChild(root.querySelector(".hjboard-view"));
+          }
+          root.insertBefore(divBoardView, root.childNodes[0]);
+        }
+
+        /**
+         * createWriteForm ( insert or update )
+         * @param
+         * @return
+         */
+        async function createWriteForm(SEQ, iuType) {
+          let resData;
+          // 수정모드
+          if (iuType === "UPDATE") {
+            let res = await fetch(
+              `http://localhost:8080/selectBoard?` +
+                new URLSearchParams({
+                  SEQ,
+                })
+            );
+            resData = await res.json();
+          } else if (iuType === "INSERT") {
+            //입력모드
+            resData = [{ SEQ: "", TITLE: "", USER_ID: "로그인ID넘기기", CREATE_DT: "", CONTENT: "" }];
+          }
+
+          const root = document.querySelector("#root");
+          const divBoardView = document.createElement("div");
+          divBoardView.setAttribute("class", "hjboard-view");
+          const ulTable = document.createElement("ul");
+
+          // make view row 1
+          let liViewRow1 = document.createElement("li");
+          liViewRow1.setAttribute("class", "hjboard-view-row");
+
+          // 순번
+          const divViewValueSeq = document.createElement("div");
+          divViewValueSeq.textContent = resData[0].SEQ;
+          divViewValueSeq.setAttribute("style", "display:none;");
+          liViewRow1.appendChild(divViewValueSeq);
+
+          // 제목
+          const divViewValueTitle = document.createElement("div");
+          divViewValueTitle.textContent = resData[0].TITLE;
+          divViewValueTitle.setAttribute("class", "hjboard-view-value-title hjboard-div-like-input");
+          divViewValueTitle.setAttribute("contenteditable", "true");
+          divViewValueTitle.setAttribute("placeholder", "제목");
+          liViewRow1.appendChild(divViewValueTitle);
+
+          // make view row 2
+          let liViewRow2 = document.createElement("li");
+          liViewRow2.setAttribute("class", "hjboard-view-row");
+
+          // 이름
+          const divViewValueUserId = document.createElement("div");
+          divViewValueUserId.textContent = resData[0].USER_ID;
+          divViewValueUserId.setAttribute("class", "hjboard-view-value-user-id");
+          liViewRow2.appendChild(divViewValueUserId);
+
+          // 날짜
+          const divViewValueCreateDt = document.createElement("div");
+          divViewValueCreateDt.textContent = resData[0].CREATE_DT;
+          divViewValueCreateDt.setAttribute("class", "hjboard-view-value-create-dt");
+          liViewRow2.appendChild(divViewValueCreateDt);
+
+          // make view row 3
+          let liViewRowContent = document.createElement("li");
+          liViewRowContent.setAttribute("class", "hjboard-view-row-content");
+
+          // 내용
+          const divViewValueContent = document.createElement("div");
+          divViewValueContent.textContent = resData[0].CONTENT;
+          divViewValueContent.setAttribute("class", "hjboard-view-value-content hjboard-div-like-textarea");
+          divViewValueContent.setAttribute("contenteditable", "true");
+          divViewValueContent.setAttribute("placeholder", "내용");
+          liViewRowContent.appendChild(divViewValueContent);
+
+          // 버튼
+          const divButtons = document.createElement("div");
+          divButtons.setAttribute("class", "hjboard-list-buttons");
+
+          const btnGoList = document.createElement("button");
+          btnGoList.textContent = "목록으로";
+          divButtons.appendChild(btnGoList);
+
+          btnGoList.addEventListener("click", function (e) {
+            if (root.querySelector(".hjboard-view")) {
+              root.removeChild(root.querySelector(".hjboard-view"));
+            }
+            if (root.querySelector(".hjboard-list")) {
+              root.removeChild(root.querySelector(".hjboard-list"));
+            }
+            selectBoardList("");
+          });
+
+          const btnGoWrite = document.createElement("button");
+          btnGoWrite.textContent = "저장";
+          divButtons.appendChild(btnGoWrite);
+
+          btnGoWrite.addEventListener("click", function (e) {
+            console.log("insert/update", iuType);
+            let pModRows = [{ SEQ: divViewValueSeq.textContent, TITLE: divViewValueTitle.textContent, CONTENT: divViewValueContent.textContent, USER_ID: "LOGIN-ID" }]; // 로그인 아이디 연동 필요???
+            saveBoard(pModRows, iuType);
+          });
+
+          ulTable.appendChild(liViewRow1);
+          if (iuType === "UPDATE") {
+            ulTable.appendChild(liViewRow2);
+          }
+          ulTable.appendChild(liViewRowContent);
+          ulTable.appendChild(divButtons);
+
+          divBoardView.appendChild(ulTable);
+
+          if (root.querySelector(".hjboard-view")) {
+            root.removeChild(root.querySelector(".hjboard-view"));
+          }
+          if (root.querySelector(".hjboard-list")) {
+            root.removeChild(root.querySelector(".hjboard-list"));
+          }
+          root.appendChild(divBoardView);
+          divViewValueTitle.focus();
+        }
+
+        /**
+         * save board to db
+         * @param
+         * @return
+         */
+        async function saveBoard(pModRows, iudType) {
+          // const { isLoginOK } = await ZnCommon.isLogin();
+          // if (!isLoginOK) {
+          //   alert("not logged in user");
+          //   return;
+          // }
+
+          let arrInsertRows = [];
+          let arrUpdateRows = [];
+          let arrDeleteRows = [];
+
+          if (iudType === "INSERT") {
+            arrInsertRows = pModRows;
+          } else if (iudType === "UPDATE") {
+            arrUpdateRows = pModRows;
+          } else if (iudType === "DELETE") {
+            arrDeleteRows = pModRows;
+          }
+
+          // let modRows = {
+          //   createdRows: [
+          //     { TITLE: "111", CONTENT: "222" },
+          //     { TITLE: "333", CONTENT: "444" },
+          //   ],
+          //   updatedRows: [],
+          //   deletedRows: [],
+          // };
+
+          let modRows = {
+            createdRows: arrInsertRows,
+            updatedRows: arrUpdateRows,
+            deletedRows: arrDeleteRows,
+          };
+
+          console.log(modRows);
+
+          const res = await fetch(`http://localhost:8080/save-list`, {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ modifiedRows: modRows }),
+          });
+
+          const resJSON = await res.json();
+
+          if (root.querySelector(".hjboard-view")) {
+            root.removeChild(root.querySelector(".hjboard-view"));
+          }
+          if (root.querySelector(".hjboard-list")) {
+            root.removeChild(root.querySelector(".hjboard-list"));
+          }
+
+          selectBoardList("");
+        }
+
+        ///
+
+        selectBoardList("");
+      }
+
+      function init() {
+        HJBoard();
+      }
+      init();
+    </script>
+  </body>
+</html>
