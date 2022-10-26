@@ -149,10 +149,12 @@
     <script>
       function HJBoard() {
         // create 1 column
-        function createDivCol(strColumnLabel, strClassName) {
+        function createDivCol(strColName, strLabel, strClass) {
+          console.log(strColName, strLabel, strClass);
           const div = document.createElement("div");
-          div.textContent = strColumnLabel;
-          div.setAttribute("class", strClassName);
+          div.textContent = strLabel;
+          div.setAttribute("class", strClass);
+          div.setAttribute("data-colname", strColName);
           return div;
         }
 
@@ -178,58 +180,34 @@
 
           /*-- create header --*/
 
-          const headerCols = [
-            { label: "번호", class: "hjboard-header-seq" },
-            { label: "제목", class: "hjboard-header-title" },
-            { label: "이름", class: "hjboard-header-user-id" },
-            { label: "날짜", class: "hjboard-header-create-dt" },
+          const boardCols = [
+            { colName: "SEQ", label: "번호", headerClass: "hjboard-header-seq", dataClass: "hjboard-row-seq" },
+            { colName: "TITLE", label: "제목", headerClass: "hjboard-header-title", dataClass: "hjboard-row-title" },
+            { colName: "USER_ID", label: "이름", headerClass: "hjboard-header-user-id", dataClass: "hjboard-row-user-id" },
+            { colName: "CREATE_DT", label: "날짜", headerClass: "hjboard-header-create-dt", dataClass: "hjboard-row-create-dt" },
           ];
 
           const liHeader = document.createElement("li");
           liHeader.setAttribute("class", "hjboard-header");
 
-          headerCols.forEach(function (col) {
-            liHeader.appendChild(createDivCol(col.label, col.class));
+          boardCols.forEach(function (col) {
+            liHeader.appendChild(createDivCol(col.colName, col.label, col.headerClass));
           });
 
           ulTable.appendChild(liHeader);
 
           /*-- create data rows --*/
 
-          // const dataCols = [
-          //   { col: "SEQ", val: "", class: "hjboard-row-seq" },
-          //   { col: "TITLE", val: "", class: "hjboard-row-title" },
-          //   { col: "USER_ID", val: "", class: "hjboard-row-user-id" },
-          //   { col: "CREATE_DT", val: "", class: "hjboard-row-create-dt" },
-          // ];
-
           resData.forEach(function (element) {
             const liRow = document.createElement("li");
             liRow.setAttribute("class", "hjboard-row");
             liRow.setAttribute("key", element.SEQ);
 
-            let divSeq = createDivCol(element.SEQ, "hjboard-row-seq");
-            let divTitle = createDivCol(element.TITLE, "hjboard-row-title");
-            let divUserId = createDivCol(element.USER_ID, "hjboard-row-user-id");
-            let divCreateDt = createDivCol(element.CREATE_DT, "hjboard-row-create-dt");
+            boardCols.forEach(function (col) {
+              liRow.appendChild(createDivCol(col.colName, element[col.colName], col.dataClass));
+            });
 
-            liRow.appendChild(divSeq);
-            liRow.appendChild(divTitle);
-            liRow.appendChild(divUserId);
-            liRow.appendChild(divCreateDt);
-
-            // dataCols[]
-
-            // const liHeader = document.createElement("li");
-            // liHeader.setAttribute("class", "hjboard-header");
-
-            // headerCols.forEach(function (col) {
-            //   liHeader.appendChild(createDivCol(col.label, col.class));
-            // });
-
-            /*-- title click event --*/
-
-            divTitle.addEventListener("click", function (e) {
+            liRow.querySelector("div[data-colname='TITLE']").addEventListener("click", function (e) {
               /*----- highlight current row: Start -----*/
               let liSelectRow = e.target.parentElement;
               let liSelectTable = e.target.parentElement.parentElement;
@@ -245,10 +223,10 @@
               liSelectRow.querySelector(".hjboard-row-seq").textContent = ">";
               /*----- highlight current row: End -----*/
 
-              // 3. create view
+              // create view
               selectBoardView(liSelectRow.getAttribute("key"));
 
-              // 4. remove button
+              // remove button
               if (root.querySelector(".hjboard-list-buttons")) {
                 root.querySelector(".hjboard-list").removeChild(root.querySelector(".hjboard-list-buttons"));
               }
