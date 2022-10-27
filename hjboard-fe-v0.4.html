@@ -1,0 +1,511 @@
+// import ZnCommon from "../zn-common.js";
+// const HOST_NAME = await ZnCommon.getHostName();
+// const { isLoginOK, LOGIN_USER_ID } = await ZnCommon.isLogin();
+
+const HOST_NAME = "http://localhost:8080";
+const { isLoginOK, LOGIN_USER_ID } = { isLoginOK: "true", LOGIN_USER_ID: "njlee" };
+
+function HJBoard() {
+  // create 1 column
+  function createDivCol(strColName, strLabel, strClass) {
+    //console.log(strColName, strLabel, strClass);
+    const div = document.createElement("div");
+    div.textContent = strLabel;
+    div.setAttribute("class", strClass);
+    div.setAttribute("data-colname", strColName);
+    return div;
+  }
+
+  // div enter newline handling(div -> p, br ... )
+  function handleDivEnter(ev) {
+    if (ev.key === "Enter") {
+      ev.preventDefault();
+      const selection = window.getSelection(),
+        range = selection.getRangeAt(0),
+        node = document.getSelection().anchorNode,
+        pNode = node.parentNode;
+      var tag = pNode.nodeName.toUpperCase();
+      if (ev.ctrlKey) {
+        tag = prompt("Entet tag name", "div");
+      } else
+        switch (tag) {
+          case "P":
+            tag = "BR";
+            break;
+
+          case "DIV":
+            tag = "p";
+            break;
+
+          case "SPAN":
+            tag = "span";
+            break;
+
+          case "BR":
+            tag = NULL;
+            break;
+
+          default:
+            tag = "BR";
+        }
+
+      const el = document.createElement(tag);
+
+      range.deleteContents();
+      range.insertNode(el);
+
+      if ("BR" === tag) {
+        range.setStartAfter(el);
+        range.setEndAfter(el);
+      } else {
+        range.setStart(el, 0);
+        range.setEnd(el, 0);
+      }
+
+      const ze = document.createTextNode("\u200B");
+      range.insertNode(ze);
+      range.setStartBefore(ze);
+      range.setEndBefore(ze);
+
+      selection.removeAllRanges();
+      selection.addRange(range);
+      ev.stopPropagation();
+    }
+    console.log(ev.target.innerHTML);
+    //ta.value = ed.innerHTML;
+  }
+
+  /**
+   * select board list
+   * @param
+   * @return
+   */
+  async function selectBoardList(SEQ) {
+    let res = await fetch(
+      `${HOST_NAME}/paget2l6/select-hjboard?` +
+        new URLSearchParams({
+          SEQ,
+        })
+    );
+    let resData = await res.json();
+
+    const root = document.querySelector("#hjboard-root");
+    const divBoardList = document.createElement("div");
+    divBoardList.setAttribute("class", "hjboard-list");
+
+    const ulTable = document.createElement("ul");
+
+    /*-- create header --*/
+
+    const boardCols = [
+      { colName: "SEQ", label: "번호", headerClass: "hjboard-header-seq", dataClass: "hjboard-row-seq" },
+      { colName: "TITLE", label: "제목", headerClass: "hjboard-header-title", dataClass: "hjboard-row-title" },
+      { colName: "USER_NAME", label: "이름", headerClass: "hjboard-header-user-id", dataClass: "hjboard-row-user-id" },
+      { colName: "CREATE_DT", label: "날짜", headerClass: "hjboard-header-create-dt", dataClass: "hjboard-row-create-dt" },
+    ];
+
+    const liHeader = document.createElement("li");
+    liHeader.setAttribute("class", "hjboard-header");
+
+    boardCols.forEach(function (col) {
+      liHeader.appendChild(createDivCol(col.colName, col.label, col.headerClass));
+    });
+
+    ulTable.appendChild(liHeader);
+
+    /*-- create data rows --*/
+
+    resData.forEach(function (element) {
+      const liRow = document.createElement("li");
+      liRow.setAttribute("class", "hjboard-row");
+      liRow.setAttribute("key", element.SEQ);
+
+      boardCols.forEach(function (col) {
+        liRow.appendChild(createDivCol(col.colName, element[col.colName], col.dataClass));
+      });
+
+      liRow.querySelector("div[data-colname='TITLE']").addEventListener("click", function (e) {
+        /*----- highlight current row: Start -----*/
+        let liSelectRow = e.target.parentElement;
+        let liSelectTable = e.target.parentElement.parentElement;
+
+        //console.log("클릭", liSelectRow.getAttribute("key"));
+
+        // 1. reset current
+        liSelectTable.querySelectorAll("li.hjboard-row").forEach(function (row) {
+          row.setAttribute("class", "hjboard-row");
+          row.querySelector(".hjboard-row-seq").textContent = row.getAttribute("key"); // set key
+        });
+
+        // 2. highlight current row
+        liSelectRow.setAttribute("class", "hjboard-row current");
+        liSelectRow.querySelector(".hjboard-row-seq").textContent = ">";
+        /*----- highlight current row: End -----*/
+
+        // create view
+        selectBoardView(liSelectRow.getAttribute("key"));
+
+        // remove button
+        if (root.querySelector(".hjboard-list-buttons")) {
+          root.querySelector(".hjboard-list").removeChild(root.querySelector(".hjboard-list-buttons"));
+        }
+      });
+
+      ulTable.appendChild(liRow);
+    });
+
+    /*-- control buttons --*/
+
+    const divListButtons = document.createElement("div");
+    divListButtons.setAttribute("class", "hjboard-list-buttons");
+
+    const btnGoWrite = document.createElement("button");
+    btnGoWrite.textContent = "글쓰기";
+    divListButtons.appendChild(btnGoWrite);
+
+    btnGoWrite.addEventListener("click", function (e) {
+      if (!isLoginOK) {
+        alert("not logged in user");
+        return;
+      }
+
+      if (root.querySelector(".hjboard-view")) {
+        root.removeChild(root.querySelector(".hjboard-view"));
+      }
+      if (root.querySelector(".hjboard-list")) {
+        root.removeChild(root.querySelector(".hjboard-list"));
+      }
+      createWriteForm("", "INSERT");
+    });
+
+    /*-- append root --*/
+
+    divBoardList.appendChild(ulTable);
+    divBoardList.appendChild(divListButtons);
+    root.appendChild(divBoardList);
+  }
+
+  /**
+   * select & view 1 article
+   * @param
+   * @return
+   */
+  async function selectBoardView(SEQ) {
+    let res = await fetch(
+      `${HOST_NAME}/paget2l6/select-hjboard?` +
+        new URLSearchParams({
+          SEQ,
+        })
+    );
+    let resData = await res.json();
+
+    //console.log(resData);
+
+    const root = document.querySelector("#hjboard-root");
+    const divBoardView = document.createElement("div");
+    divBoardView.setAttribute("class", "hjboard-view");
+    const ulTable = document.createElement("ul");
+
+    // make view row 1
+    let liViewRow1 = document.createElement("li");
+    liViewRow1.setAttribute("class", "hjboard-view-row");
+
+    // 순번
+    const divViewValueSeq = document.createElement("div");
+    divViewValueSeq.textContent = SEQ;
+    divViewValueSeq.setAttribute("style", "display:none;");
+    liViewRow1.appendChild(divViewValueSeq);
+
+    // 제목
+    const divTitleValue = document.createElement("div");
+    divTitleValue.textContent = resData[0].TITLE;
+    divTitleValue.setAttribute("class", "hjboard-view-value-title");
+    liViewRow1.appendChild(divTitleValue);
+
+    // make view row 2
+    let liViewRow2 = document.createElement("li");
+    liViewRow2.setAttribute("class", "hjboard-view-row");
+
+    // 이름
+    const divViewValueUserId = document.createElement("div");
+    divViewValueUserId.textContent = resData[0].USER_NAME;
+    divViewValueUserId.setAttribute("class", "hjboard-view-value-user-id");
+    liViewRow2.appendChild(divViewValueUserId);
+
+    // 날짜
+    const divViewValueCreateDt = document.createElement("div");
+    divViewValueCreateDt.textContent = resData[0].CREATE_DT;
+    divViewValueCreateDt.setAttribute("class", "hjboard-view-value-create-dt");
+    liViewRow2.appendChild(divViewValueCreateDt);
+
+    // make view row 3
+    let liViewRowContent = document.createElement("li");
+    liViewRowContent.setAttribute("class", "hjboard-view-row-content");
+
+    // 내용
+    const divViewValueContent = document.createElement("div");
+    divViewValueContent.innerHTML = resData[0].CONTENT;
+    divViewValueContent.setAttribute("class", "hjboard-view-value-content");
+    liViewRowContent.appendChild(divViewValueContent);
+
+    // 버튼
+    const divButtons = document.createElement("div");
+    divButtons.setAttribute("class", "hjboard-view-buttons");
+
+    const btnGoList = document.createElement("button");
+    btnGoList.textContent = "목록으로";
+    divButtons.appendChild(btnGoList);
+
+    btnGoList.addEventListener("click", function (e) {
+      if (root.querySelector(".hjboard-view")) {
+        root.removeChild(root.querySelector(".hjboard-view"));
+      }
+      if (root.querySelector(".hjboard-list")) {
+        root.removeChild(root.querySelector(".hjboard-list"));
+      }
+      selectBoardList("");
+    });
+
+    const btnUpdate = document.createElement("button");
+    btnUpdate.textContent = "수정";
+    divButtons.appendChild(btnUpdate);
+
+    btnUpdate.addEventListener("click", function (e) {
+      if (!isLoginOK) {
+        alert("not logged in user");
+        return;
+      }
+
+      if (root.querySelector(".hjboard-view")) {
+        root.removeChild(root.querySelector(".hjboard-view"));
+      }
+      if (root.querySelector(".hjboard-list")) {
+        root.removeChild(root.querySelector(".hjboard-list"));
+      }
+      createWriteForm(resData[0].SEQ, "UPDATE");
+    });
+
+    const btnDelete = document.createElement("button");
+    btnDelete.textContent = "삭제";
+    divButtons.appendChild(btnDelete);
+
+    btnDelete.addEventListener("click", function (e) {
+      if (!isLoginOK) {
+        alert("not logged in user");
+        return;
+      }
+
+      //console.log("순번", divViewValueSeq.textContent);
+      let pModRows = [{ SEQ: divViewValueSeq.textContent, USER_ID: LOGIN_USER_ID }];
+      saveBoard(pModRows, "DELETE");
+    });
+
+    ulTable.appendChild(liViewRow1);
+    ulTable.appendChild(liViewRow2);
+    ulTable.appendChild(liViewRowContent);
+    ulTable.appendChild(divButtons);
+
+    divBoardView.appendChild(ulTable);
+
+    if (root.querySelector(".hjboard-view")) {
+      root.removeChild(root.querySelector(".hjboard-view"));
+    }
+    root.insertBefore(divBoardView, root.childNodes[0]);
+  }
+
+  /**
+   * createWriteForm ( insert or update )
+   * @param
+   * @return
+   */
+  async function createWriteForm(SEQ, iuType) {
+    let resData;
+    // 수정모드
+    if (iuType === "UPDATE") {
+      let res = await fetch(
+        `${HOST_NAME}/paget2l6/select-hjboard?` +
+          new URLSearchParams({
+            SEQ,
+          })
+      );
+      resData = await res.json();
+    } else if (iuType === "INSERT") {
+      //입력모드
+      resData = [{ SEQ: "", TITLE: "", USER_ID: LOGIN_USER_ID, CREATE_DT: "", CONTENT: "" }];
+    }
+
+    const root = document.querySelector("#hjboard-root");
+    const divBoardView = document.createElement("div");
+    divBoardView.setAttribute("class", "hjboard-view");
+    const ulTable = document.createElement("ul");
+
+    // make view row 1
+    let liViewRow1 = document.createElement("li");
+    liViewRow1.setAttribute("class", "hjboard-view-row");
+
+    // 순번
+    const divViewValueSeq = document.createElement("div");
+    divViewValueSeq.textContent = resData[0].SEQ;
+    divViewValueSeq.setAttribute("style", "display:none;");
+    liViewRow1.appendChild(divViewValueSeq);
+
+    // 제목
+    const divViewValueTitle = document.createElement("div");
+    divViewValueTitle.textContent = resData[0].TITLE;
+    divViewValueTitle.setAttribute("class", "hjboard-view-value-title hjboard-div-like-input");
+    divViewValueTitle.setAttribute("contenteditable", "true");
+    divViewValueTitle.setAttribute("placeholder", "제목");
+    liViewRow1.appendChild(divViewValueTitle);
+
+    // make view row 2 - 불필요 삭제검토
+    // let liViewRow2 = document.createElement("li");
+    // liViewRow2.setAttribute("class", "hjboard-view-row");
+
+    // // 이름
+    // const divViewValueUserId = document.createElement("div");
+    // divViewValueUserId.textContent = resData[0].USER_NAME;
+    // divViewValueUserId.setAttribute("class", "hjboard-view-value-user-id");
+    // liViewRow2.appendChild(divViewValueUserId);
+
+    // // 날짜
+    // const divViewValueCreateDt = document.createElement("div");
+    // divViewValueCreateDt.textContent = resData[0].CREATE_DT;
+    // divViewValueCreateDt.setAttribute("class", "hjboard-view-value-create-dt");
+    // liViewRow2.appendChild(divViewValueCreateDt);
+
+    // make view row 3
+    let liViewRowContent = document.createElement("li");
+    liViewRowContent.setAttribute("class", "hjboard-view-row-content");
+
+    // 내용
+    const divViewValueContent = document.createElement("div");
+    divViewValueContent.innerHTML = resData[0].CONTENT;
+    divViewValueContent.setAttribute("class", "hjboard-view-value-content hjboard-div-like-textarea");
+    divViewValueContent.setAttribute("contenteditable", "true");
+    divViewValueContent.setAttribute("placeholder", "내용");
+    liViewRowContent.appendChild(divViewValueContent);
+
+    divViewValueContent.addEventListener("keydown", handleDivEnter); // div enter newline handling(div -> p, br ... )
+
+    // 버튼
+    const divButtons = document.createElement("div");
+    divButtons.setAttribute("class", "hjboard-list-buttons");
+
+    const btnGoList = document.createElement("button");
+    btnGoList.textContent = "목록으로";
+    divButtons.appendChild(btnGoList);
+
+    btnGoList.addEventListener("click", function (e) {
+      if (root.querySelector(".hjboard-view")) {
+        root.removeChild(root.querySelector(".hjboard-view"));
+      }
+      if (root.querySelector(".hjboard-list")) {
+        root.removeChild(root.querySelector(".hjboard-list"));
+      }
+      selectBoardList("");
+    });
+
+    const btnGoWrite = document.createElement("button");
+    btnGoWrite.textContent = "저장";
+    divButtons.appendChild(btnGoWrite);
+
+    btnGoWrite.addEventListener("click", function (e) {
+      //console.log("insert/update", iuType);
+      let pModRows = [{ SEQ: divViewValueSeq.textContent, TITLE: divViewValueTitle.textContent, CONTENT: divViewValueContent.innerHTML, USER_ID: LOGIN_USER_ID }];
+      saveBoard(pModRows, iuType);
+    });
+
+    ulTable.appendChild(liViewRow1);
+
+    // 입력/수정시 글쓴이 보여주지 않음 - 어차피 내글만 입력/수정 가능
+    // if (iuType === "UPDATE") {
+    //   ulTable.appendChild(liViewRow2);
+    // }
+
+    ulTable.appendChild(liViewRowContent);
+    ulTable.appendChild(divButtons);
+
+    divBoardView.appendChild(ulTable);
+
+    if (root.querySelector(".hjboard-view")) {
+      root.removeChild(root.querySelector(".hjboard-view"));
+    }
+    if (root.querySelector(".hjboard-list")) {
+      root.removeChild(root.querySelector(".hjboard-list"));
+    }
+    root.appendChild(divBoardView);
+    divViewValueTitle.focus();
+  }
+
+  /**
+   * save board to db
+   * @param
+   * @return
+   */
+  async function saveBoard(pModRows, iudType) {
+    // const { isLoginOK } = await ZnCommon.isLogin();
+    // if (!isLoginOK) {
+    //   alert("not logged in user");
+    //   return;
+    // }
+
+    let arrInsertRows = [];
+    let arrUpdateRows = [];
+    let arrDeleteRows = [];
+
+    if (iudType === "INSERT") {
+      arrInsertRows = pModRows;
+    } else if (iudType === "UPDATE") {
+      arrUpdateRows = pModRows;
+    } else if (iudType === "DELETE") {
+      arrDeleteRows = pModRows;
+    }
+
+    //console.log(pModRows);
+
+    // let modRows = {
+    //   createdRows: [
+    //     { TITLE: "111", CONTENT: "222" },
+    //     { TITLE: "333", CONTENT: "444" },
+    //   ],
+    //   updatedRows: [],
+    //   deletedRows: [],
+    // };
+
+    let modRows = {
+      createdRows: arrInsertRows,
+      updatedRows: arrUpdateRows,
+      deletedRows: arrDeleteRows,
+    };
+
+    const res = await fetch(`${HOST_NAME}/paget2l6/save-hjboard`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ modifiedRows: modRows }),
+    });
+
+    const resJSON = await res.json();
+
+    const root = document.querySelector("#hjboard-root");
+    if (root.querySelector(".hjboard-view")) {
+      root.removeChild(root.querySelector(".hjboard-view"));
+    }
+    if (root.querySelector(".hjboard-list")) {
+      root.removeChild(root.querySelector(".hjboard-list"));
+    }
+
+    selectBoardList("");
+  }
+
+  ///
+
+  selectBoardList("");
+}
+
+function init() {
+  HJBoard();
+}
+init();
